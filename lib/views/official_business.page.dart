@@ -73,6 +73,7 @@ class _OfficialBusinessPageState extends State<OfficialBusinessPage> {
             SizedBox(height: 10),
             TextField(
               decoration: InputDecoration(labelText: 'Employee ID'),
+              enabled: false,
             ),
             SizedBox(height: 20),
             Card(
