@@ -21,45 +21,39 @@ class WelcomePage extends StatelessWidget {
               style: TextStyle(fontSize: 24),
             ),
             SizedBox(height: 20),
-            HyperlinkWidget(
-              text: 'New Leave-of-Absence',
-              onTap: () {
+            ElevatedButton(
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => LeaveRequestPage()),
                 );
               },
+              child: Text('New Leave-of-Absence'),
             ),
-            HyperlinkWidget(
-              text: 'New Overtime',
-              onTap: () {
+            ElevatedButton(
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => OvertimePage()),
                 );
               },
+              child: Text('New Overtime'),
             ),
-            HyperlinkWidget(
-              text: 'New Official Business',
-              onTap: () {
+            ElevatedButton(
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => OfficialBusinessPage()),
                 );
               },
+              child: Text('New Official Business'),
             ),
-            GestureDetector(
-              onTap: () {
+            ElevatedButton(
+              onPressed: () {
                 _showMyTimeEntryModal(context);
               },
-              child: Text(
-                'My Time Entry',
-                style: TextStyle(
-                  color: Colors.blue, // You can customize the text color
-                  decoration: TextDecoration.underline,
-                ),
-              ),
+              child: Text('My Time Entry'),
             ),
           ],
         ),
