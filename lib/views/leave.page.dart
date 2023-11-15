@@ -72,7 +72,11 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
             ),
             SizedBox(height: 10),
             TextField(
-              decoration: InputDecoration(labelText: 'Employee ID'),
+              decoration: InputDecoration(
+                labelText: 'Employee ID',
+                enabled:
+                    false, // Set this property to false to disable the TextField
+              ),
             ),
             SizedBox(height: 20),
             Card(
