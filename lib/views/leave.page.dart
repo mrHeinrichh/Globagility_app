@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class LeaveRequestPage extends StatefulWidget {
   @override
@@ -6,14 +8,15 @@ class LeaveRequestPage extends StatefulWidget {
 }
 
 class _LeaveRequestPageState extends State<LeaveRequestPage> {
-  // Placeholder values for dropdown
   String _selectedLeaveType = 'Sick Leave';
-
-  // Variables to store selected date and time
   DateTime? _startDate;
   DateTime? _endDate;
 
-  // Function to show date picker
+  TextEditingController _fullNameController = TextEditingController();
+  TextEditingController _employeeIdController = TextEditingController();
+  TextEditingController _reasonController = TextEditingController();
+  TextEditingController _commentsController = TextEditingController();
+
   Future<void> _selectDate(bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -29,7 +32,6 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     }
   }
 
-  // Function to show time picker
   Future<void> _selectTime(bool isStartDate) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -57,6 +59,50 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     }
   }
 
+  Future<void> _submitLeaveRequest() async {
+    final url = Uri.parse('http://192.168.1.5:5000/api/leaves');
+
+    final leaveRequestData = {
+      "employeeId": int.parse(_employeeIdController.text),
+      "employeeNumber": "100120", // You can update this based on your form
+      "employeeName": _fullNameController.text,
+      "employeeType": "Daily", // You can update this based on your form
+      "leaveType": _selectedLeaveType,
+      "startTime": _startDate!.toIso8601String(),
+      "endTime": _endDate!.toIso8601String(),
+      "startDate": _startDate!.toIso8601String(),
+      "endDate": _endDate!.toIso8601String(),
+      "status": "Pending",
+      "reason": _reasonController.text,
+      "comments": _commentsController.text,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(leaveRequestData),
+      );
+
+      if (response.statusCode == 200) {
+        print('Leave request submitted successfully');
+        print(response.body);
+        print(jsonDecode(response.body));
+        print(response.statusCode);
+      } else {
+        print(
+            'Failed to submit leave request. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        // You can display an error message to the user
+      }
+    } catch (e) {
+      print('Error submitting leave request: $e');
+      // You can display an error message to the user
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,14 +114,15 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
         child: ListView(
           children: [
             TextField(
+              controller: _fullNameController,
               decoration: InputDecoration(labelText: 'Full Name'),
             ),
             SizedBox(height: 10),
             TextField(
+              controller: _employeeIdController,
               decoration: InputDecoration(
                 labelText: 'Employee ID',
-                enabled:
-                    false, // Set this property to false to disable the TextField
+                enabled: true,
               ),
             ),
             SizedBox(height: 20),
@@ -184,18 +231,18 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
             ),
             SizedBox(height: 20),
             TextField(
+              controller: _reasonController,
               maxLines: 5,
               decoration: InputDecoration(labelText: 'Reason'),
             ),
             TextField(
+              controller: _commentsController,
               maxLines: 5,
               decoration: InputDecoration(labelText: 'Comments'),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Implement leave request submission logic
-              },
+              onPressed: _submitLeaveRequest,
               child: Text('Submit Leave Request'),
             ),
           ],
