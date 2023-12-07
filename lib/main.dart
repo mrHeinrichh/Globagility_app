@@ -26,6 +26,14 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +62,10 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () async {
-                _login(); // Ensure to await the asynchronous method
-              },
-              child: const Text('Login'),
+              onPressed: _isLoading ? null : () => _login(),
+              child: _isLoading
+                  ? CircularProgressIndicator()
+                  : const Text('Login'),
             ),
           ],
         ),
@@ -66,46 +74,68 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _login() async {
-    String username = _usernameController.text;
-    String password = _passwordController.text;
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (username.isNotEmpty && password.isNotEmpty) {
-      // Make HTTP POST request to the login endpoint
-      final response = await http.post(
-        Uri.parse('http://192.168.1.19:5000/api/account/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': username, 'password': password}),
-      );
+    try {
+      String username = _usernameController.text;
+      String password = _passwordController.text;
 
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        // Successful login
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        String token = data['token'];
-
-        // You can save the token or use it as needed
-        print('Token: $token');
-
-        await Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => WelcomePage()),
+      if (username.isNotEmpty && password.isNotEmpty) {
+        final String baseUrl =
+            'http://172.20.10.2:51890'; // or 'https://10.0.2.2:5001';
+        final response = await http.post(
+          Uri.parse('$baseUrl/api/account/login'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Origin':
+                'http://172.20.10.2:51890', // Adjust the origin based on your Flutter app's IP
+          },
+          body: jsonEncode({'email': username, 'password': password}),
         );
+
+        print('Response Status Code: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = jsonDecode(response.body);
+          String token = data['token'];
+
+          print('Token: $token');
+
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => WelcomePage()),
+          );
+        } else {
+          print('Login failed: ${response.statusCode}');
+          print('Response Body: ${response.body}');
+          // Handle specific status codes with appropriate messages
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login failed: ${response.statusCode}'),
+            ),
+          );
+        }
       } else {
-        // Failed login
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Invalid credentials'),
           ),
         );
       }
-    } else {
+    } catch (e) {
+      // Handle other exceptions (e.g., network issues)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Invalid credentials'),
+          content: Text('An error occurred: $e'),
         ),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 }
