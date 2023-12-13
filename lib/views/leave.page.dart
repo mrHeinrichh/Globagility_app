@@ -3,14 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class LeaveRequestPage extends StatefulWidget {
+  final String authToken;
+
+  LeaveRequestPage({required this.authToken});
+
   @override
   _LeaveRequestPageState createState() => _LeaveRequestPageState();
 }
 
 class _LeaveRequestPageState extends State<LeaveRequestPage> {
+  String _selectedEmployeeType = 'Regular Exempt';
   String _selectedLeaveType = 'Sick Leave';
   DateTime? _startDate;
   DateTime? _endDate;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
 
   TextEditingController _fullNameController = TextEditingController();
   TextEditingController _employeeIdController = TextEditingController();
@@ -32,44 +39,38 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     }
   }
 
-  Future<void> _selectTime(bool isStartDate) async {
+  Future<void> _selectTime(bool isStartTime) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
 
-    if (picked != null) {
+    if (picked != null && picked != (isStartTime ? _startTime : _endTime)) {
       setState(() {
-        isStartDate
-            ? _startDate = DateTime(
-                _startDate!.year,
-                _startDate!.month,
-                _startDate!.day,
-                picked.hour,
-                picked.minute,
-              )
-            : _endDate = DateTime(
-                _endDate!.year,
-                _endDate!.month,
-                _endDate!.day,
-                picked.hour,
-                picked.minute,
-              );
+        isStartTime ? _startTime = picked : _endTime = picked;
       });
     }
   }
 
+  String _getDateTime(DateTime? date, TimeOfDay? time) {
+    if (date == null || time == null) {
+      return '';
+    }
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute)
+        .toIso8601String();
+  }
+
   Future<void> _submitLeaveRequest() async {
-    final url = Uri.parse('http://192.168.1.5:5000/api/leaves');
+    final url = Uri.parse('http://10.0.2.2:5000/api/leaves');
 
     final leaveRequestData = {
       "employeeId": int.parse(_employeeIdController.text),
-      "employeeNumber": "100120", // You can update this based on your form
+      "employeeNumber": "100120",
       "employeeName": _fullNameController.text,
-      "employeeType": "Daily", // You can update this based on your form
+      "employeeType": _selectedEmployeeType,
       "leaveType": _selectedLeaveType,
-      "startTime": _startDate!.toIso8601String(),
-      "endTime": _endDate!.toIso8601String(),
+      "startTime": _getDateTime(_startDate, _startTime),
+      "endTime": _getDateTime(_endDate, _endTime),
       "startDate": _startDate!.toIso8601String(),
       "endDate": _endDate!.toIso8601String(),
       "status": "Pending",
@@ -82,6 +83,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
         url,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.authToken}',
         },
         body: jsonEncode(leaveRequestData),
       );
@@ -101,6 +103,13 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
       print('Error submitting leave request: $e');
       // You can display an error message to the user
     }
+  }
+
+  String _formatTimeOfDay(TimeOfDay? time) {
+    if (time == null) {
+      return '';
+    }
+    return '${time.hour}:${time.minute}';
   }
 
   @override
@@ -137,6 +146,31 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
+                      'Employee Type',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    DropdownButton<String>(
+                      value: _selectedEmployeeType,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedEmployeeType = value!;
+                        });
+                      },
+                      items: <String>[
+                        'Regular Exempt',
+                        'Regular Non Exempt',
+                        'Contractor',
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
                       'Leave Type',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -151,9 +185,8 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                       },
                       items: <String>[
                         'Sick Leave',
-                        'Vacation',
-                        'Personal Leave',
-                        'Unpaid Leave',
+                        'Vacation Leave',
+                        'Maternity Leave',
                       ].map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -185,8 +218,8 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                           child: ElevatedButton(
                             onPressed: () => _selectTime(true),
                             child: Text(
-                              _startDate != null
-                                  ? '$_startDate'.split(' ')[1].substring(0, 5)
+                              _startTime != null
+                                  ? '${_startTime!.hour}:${_startTime!.minute}'
                                   : 'Select Time',
                             ),
                           ),
@@ -217,8 +250,8 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                           child: ElevatedButton(
                             onPressed: () => _selectTime(false),
                             child: Text(
-                              _endDate != null
-                                  ? '$_endDate'.split(' ')[1].substring(0, 5)
+                              _endTime != null
+                                  ? '${_endTime!.hour}:${_endTime!.minute}'
                                   : 'Select Time',
                             ),
                           ),

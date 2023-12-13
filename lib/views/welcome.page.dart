@@ -6,6 +6,9 @@ import 'package:globagility_app/views/time_entry.page.dart';
 import 'package:globagility_app/widgets/hyperlink.widget.dart';
 
 class WelcomePage extends StatelessWidget {
+  final String authToken;
+
+  WelcomePage({required this.authToken});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,7 +28,10 @@ class WelcomePage extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => LeaveRequestPage()),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        LeaveRequestPage(authToken: authToken),
+                  ),
                 );
               },
               child: Text('New Leave-of-Absence'),
@@ -34,7 +40,10 @@ class WelcomePage extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => OvertimePage()),
+                  MaterialPageRoute(
+                      builder: (context) => OvertimePage(
+                            authToken: authToken,
+                          )),
                 );
               },
               child: Text('New Overtime'),
@@ -44,7 +53,9 @@ class WelcomePage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => OfficialBusinessPage()),
+                      builder: (context) => OfficialBusinessPage(
+                            authToken: authToken,
+                          )),
                 );
               },
               child: Text('New Official Business'),

@@ -1,19 +1,29 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class OvertimePage extends StatefulWidget {
+  final String authToken;
+  OvertimePage({required this.authToken});
   @override
   _OvertimePageState createState() => _OvertimePageState();
 }
 
 class _OvertimePageState extends State<OvertimePage> {
-  // Placeholder values for dropdown
-  String _selectedLeaveType = '';
-
-  // Variables to store selected date and time
+  String _selectedLeaveType = 'Daily';
   DateTime? _startDate;
   DateTime? _endDate;
 
-  // Function to show date picker
+  TextEditingController _fullNameController = TextEditingController();
+  TextEditingController _employeeIdController = TextEditingController();
+  TextEditingController _reasonController = TextEditingController();
+  TextEditingController _commentsController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   Future<void> _selectDate(bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -29,7 +39,6 @@ class _OvertimePageState extends State<OvertimePage> {
     }
   }
 
-  // Function to show time picker
   Future<void> _selectTime(bool isStartDate) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -57,6 +66,51 @@ class _OvertimePageState extends State<OvertimePage> {
     }
   }
 
+  Future<void> _submitOvertimeRequest() async {
+    final url = Uri.parse('http://10.0.2.2:5000/api/overtimes');
+
+    final overtimeRequestData = {
+      "id": 2,
+      "employeeId": int.parse(_employeeIdController.text),
+      "employeeNumber": "100120",
+      "employeeName": _fullNameController.text,
+      "employeeType": _selectedLeaveType,
+      "startTime": _startDate!.toIso8601String(),
+      "endTime": _endDate!.toIso8601String(),
+      "startDate": _startDate!.toIso8601String(),
+      "endDate": _endDate!.toIso8601String(),
+      "status": "Pending",
+      "reason": _reasonController.text,
+      "comments": _commentsController.text,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.authToken}',
+        },
+        body: jsonEncode(overtimeRequestData),
+      );
+
+      if (response.statusCode == 200) {
+        print('Overtime request submitted successfully');
+        print(response.body);
+        print(jsonDecode(response.body));
+        print(response.statusCode);
+      } else {
+        print(
+            'Failed to submit overtime request. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        // You can display an error message to the user
+      }
+    } catch (e) {
+      print('Error submitting overtime request: $e');
+      // You can display an error message to the user
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,12 +122,15 @@ class _OvertimePageState extends State<OvertimePage> {
         child: ListView(
           children: [
             TextField(
+              controller: _fullNameController,
               decoration: InputDecoration(labelText: 'Full Name'),
             ),
             SizedBox(height: 10),
             TextField(
-              decoration: InputDecoration(labelText: 'Employee ID'),
-              enabled: false,
+              controller: _employeeIdController,
+              decoration: InputDecoration(
+                labelText: 'Employee ID',
+              ),
             ),
             SizedBox(height: 20),
             Card(
@@ -99,8 +156,11 @@ class _OvertimePageState extends State<OvertimePage> {
                           _selectedLeaveType = value!;
                         });
                       },
-                      items: <String>[]
-                          .map<DropdownMenuItem<String>>((String value) {
+                      items: <String>[
+                        'Daily',
+                        'Weekly',
+                        'Monthly',
+                      ].map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
@@ -177,19 +237,19 @@ class _OvertimePageState extends State<OvertimePage> {
             ),
             SizedBox(height: 20),
             TextField(
+              controller: _reasonController,
               maxLines: 5,
               decoration: InputDecoration(labelText: 'Reason'),
             ),
             TextField(
+              controller: _commentsController,
               maxLines: 5,
               decoration: InputDecoration(labelText: 'Comments'),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Implement leave request submission logic
-              },
-              child: Text('Submit Leave Request'),
+              onPressed: _submitOvertimeRequest,
+              child: Text('Submit Overtime Request'),
             ),
           ],
         ),

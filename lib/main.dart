@@ -84,13 +84,14 @@ class _LoginPageState extends State<LoginPage> {
 
       if (username.isNotEmpty && password.isNotEmpty) {
         final String baseUrl =
-            'http://172.20.10.2:51890'; // or 'https://10.0.2.2:5001';
+            'http://10.0.2.2:5000'; // or 'https://10.0.2.2:5001';
         final response = await http.post(
           Uri.parse('$baseUrl/api/account/login'),
           headers: {
             'Content-Type': 'application/json',
+
             'Origin':
-                'http://172.20.10.2:51890', // Adjust the origin based on your Flutter app's IP
+                'http://10.0.2.2:5000', // Adjust the origin based on your Flutter app's IP
           },
           body: jsonEncode({'email': username, 'password': password}),
         );
@@ -106,7 +107,8 @@ class _LoginPageState extends State<LoginPage> {
 
           await Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => WelcomePage()),
+            MaterialPageRoute(
+                builder: (context) => WelcomePage(authToken: token)),
           );
         } else {
           print('Login failed: ${response.statusCode}');
